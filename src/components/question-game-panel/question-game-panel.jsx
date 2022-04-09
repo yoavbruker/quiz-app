@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CircularProgress, Grid } from "@mui/material";
 import Question from "../question/question";
-import "./question-game-panel.css";
 import QuestionGameStats from "../question-game-stats/question-game-stats";
+import GameSummery from "../game-summery/game-summery";
+import "./question-game-panel.css";
 
 const INITIAL_TIME_PER_QUESTION_IN_MILLISECONDS = 60000;
 
@@ -13,6 +14,7 @@ const QuestionGamePanel = () => {
   const [timeLeftInMilliseconds, setTimeLeftInMilliseconds] = useState(
     INITIAL_TIME_PER_QUESTION_IN_MILLISECONDS
   );
+  const [isGameOver, setIsGameOver] = useState(false);
 
   const timerInterval = useRef(null);
 
@@ -29,24 +31,37 @@ const QuestionGamePanel = () => {
         console.log(error);
       }
     };
-
-    getAllQuestions();
-  }, [setAllQuestions]);
+    if (!isGameOver) {
+      getAllQuestions();
+    }
+  }, [isGameOver, setAllQuestions]);
 
   useEffect(() => {
-    if (timerInterval.current === null) {
+    const setTimerInterval = () => {
+      if (timerInterval !== null) {
+        clearInterval(timerInterval);
+      }
+
       timerInterval.current = setInterval(() => {
         setTimeLeftInMilliseconds((prevTime) => prevTime - 200);
       }, 200);
+    };
+
+    if (!isGameOver) {
+      setTimerInterval();
     }
-  }, [timerInterval, setTimeLeftInMilliseconds]);
+  }, [isGameOver]);
 
   useEffect(() => {
-    if (timeLeftInMilliseconds === 0) {
+    if (timeLeftInMilliseconds === 0 || isGameOver) {
       clearInterval(timerInterval.current);
       timerInterval.current = null;
+
+      if (timeLeftInMilliseconds === 0) {
+        setIsGameOver(true);
+      }
     }
-  }, [timeLeftInMilliseconds]);
+  }, [timeLeftInMilliseconds, isGameOver, setIsGameOver]);
 
   const moveToNextQuestion = () => {
     setCurrentQuestion((prevQuestionIndex) => prevQuestionIndex + 1);
@@ -59,7 +74,13 @@ const QuestionGamePanel = () => {
   };
 
   const onWrongAnswerClicked = () => {
-    moveToNextQuestion();
+    setIsGameOver(true);
+  };
+
+  const onRetryClicked = () => {
+    setTimeLeftInMilliseconds(INITIAL_TIME_PER_QUESTION_IN_MILLISECONDS);
+    setIsGameOver(false);
+    setScore(0);
   };
 
   const currentQuestionObject = allQuestions[currentQuestion];
@@ -68,28 +89,34 @@ const QuestionGamePanel = () => {
     (timeLeftInMilliseconds / INITIAL_TIME_PER_QUESTION_IN_MILLISECONDS) * 100;
 
   return (
-    <Grid container className="gamePanel">
-      <Grid item xs={9}>
-        {currentQuestionObject ? (
-          <Question
-            question={currentQuestionObject.question}
-            rightAnswer={currentQuestionObject.correct_answer}
-            wrongAnswers={currentQuestionObject.incorrect_answers}
-            onRightAnswerClicked={onRightAnswerClicked}
-            onWrongAnswerClicked={onWrongAnswerClicked}
-          />
-        ) : (
-          <CircularProgress />
-        )}
-      </Grid>
-      <Grid item xs={3}>
-        <QuestionGameStats
-          score={score}
-          timeLeftPrecentage={timeLeftPrecentage}
-          actualTimeLeft={timeLeftInMilliseconds / 1000}
-        />
-      </Grid>
-    </Grid>
+    <>
+      {!isGameOver ? (
+        <Grid container className="gamePanel">
+          <Grid item xs={9}>
+            {currentQuestionObject ? (
+              <Question
+                question={currentQuestionObject.question}
+                rightAnswer={currentQuestionObject.correct_answer}
+                wrongAnswers={currentQuestionObject.incorrect_answers}
+                onRightAnswerClicked={onRightAnswerClicked}
+                onWrongAnswerClicked={onWrongAnswerClicked}
+              />
+            ) : (
+              <CircularProgress />
+            )}
+          </Grid>
+          <Grid item xs={3}>
+            <QuestionGameStats
+              score={score}
+              timeLeftPrecentage={timeLeftPrecentage}
+              actualTimeLeft={timeLeftInMilliseconds / 1000}
+            />
+          </Grid>
+        </Grid>
+      ) : (
+        <GameSummery score={score} onRetryClicked={onRetryClicked} />
+      )}
+    </>
   );
 };
 
