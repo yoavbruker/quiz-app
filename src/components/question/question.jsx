@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Button, Grid } from "@mui/material";
 import "./question.css";
 
@@ -19,39 +19,35 @@ const Question = ({
   onRightAnswerClicked,
   onWrongAnswerClicked,
 }) => {
-  const shuffledAnswers = useMemo(
-    () =>
-      [rightAnswer, ...wrongAnswers]
-        .map((value) => ({ value, sort: Math.random() }))
-        .sort((a, b) => a.sort - b.sort)
-        .map(({ value }) => value),
-    [rightAnswer, wrongAnswers]
-  );
-
   return (
     <Grid
       container
       direction="column"
       justifyContent="space-around"
-      className="questionContainer"
+      className="container"
     >
-      <Grid item>
+      <Grid item className="question">
         <h3>{decodeHtmlString(question)}</h3>
       </Grid>
-      <Grid item>
+      <Grid item className="answers">
         <Grid container justifyContent="space-around">
-          {shuffledAnswers.map((answer, answerIndex) => (
-            <Grid item xs={6} key={answerIndex}>
+          <Grid item>
+            <Button
+              className="btn"
+              variant="contained"
+              onClick={onRightAnswerClicked}
+            >
+              {decodeHtmlString(rightAnswer)}
+            </Button>
+          </Grid>
+          {wrongAnswers.map((wrongAnswer, wrongAnswerIndex) => (
+            <Grid item key={wrongAnswerIndex}>
               <Button
+                className="btn"
                 variant="contained"
-                onClick={
-                  answer === rightAnswer
-                    ? onRightAnswerClicked
-                    : onWrongAnswerClicked
-                }
-                className="answerButton"
+                onClick={onWrongAnswerClicked}
               >
-                {decodeHtmlString(answer)}
+                {decodeHtmlString(wrongAnswer)}
               </Button>
             </Grid>
           ))}
